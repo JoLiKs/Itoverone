@@ -6,14 +6,14 @@ public class Main {
     private static final String user = "root";
     private static final String password = "123123";
     private static Connection con;
-    private static Statement statement;
-    private static Statement statement2;
-    private static int uid = 3;
+    private static Statement statement, statement2, statement3;
+    private static int uid = 5;
     public static void main(String[] args) throws Exception {
 
         con = DriverManager.getConnection(url, user, password);
         statement = con.createStatement();
         statement2 = con.createStatement();
+        statement3 = con.createStatement();
         statement.executeUpdate(
         "CREATE TABLE if not exists users"+uid+" " +
                 "(id INT not NULL AUTO_INCREMENT, " +
@@ -53,6 +53,7 @@ public class Main {
                     int sum = scanner.nextInt();
                     String sql = setUser(name, lasName, age, sum);
                     statement.executeUpdate(sql);
+                    connectUsers();
                     break;
                 case 2:
                     print("Enter manager name");
@@ -64,20 +65,33 @@ public class Main {
                     statement.executeUpdate(msql);
                     break;
                 case 3:
-                    print(getAllUsersEntities());
+                    Map<Integer, User> map = new HashMap<>();
+                    Map<Integer, Manager> map1 = new HashMap<>();
+                    map = getAllUsersEntities();
+                    map1 = getAllManagersEntities();
+                    print("Enter user and manager numbers");
+                    int usId, mId;
+                    usId = scanner.nextInt();
+                    mId = scanner.nextInt();
+                    String sql2 = connectUsers(usId, mId, map, map1);
+                    statement.executeUpdate(sql2);
                     break;
                 case 4:
-                   contactUserManagers();
+
                     break;
                 case 5:
-                    getAmount();
+                    Map<User, Manager> usman = getMapConnection();
+                    setAmount(usman);
                     break;
             }
             command = scanner.nextInt();
         }
     }
 
-    private static void getAmount() throws SQLException, InterruptedException {
+    private static void setAmount(Map<User, Manager> map) throws SQLException, InterruptedException {
+        for (Map.Entry<User, Manager> en : map.entrySet()) {
+            User user1 = en.getKey();
+        }
         Integer amount = 0;
         ResultSet res = statement.executeQuery("SELECT * FROM client"+uid);
         while(res.next()) {
@@ -86,27 +100,41 @@ public class Main {
 
         print(amount);
     }
+public static String connectUsers(int u, int m, Map<Integer, User> map1, Map<Integer, Manager> map2) {
+        User user1 = map1.get(u);
+        Manager manager1 = map2.get(m);
+        String sql = "insert into client"+uid+" (user_id, manager_id) values "+"('"+user1.getId()+"', '"+manager1.getId()+"');";
 
-    private static void contactUserManagers() throws SQLException {
-        HashMap<Integer, Integer> ids = new HashMap<Integer, Integer>();
-        ResultSet managers = statement.executeQuery("SELECT id FROM managers"+uid);
-        ResultSet users = statement2.executeQuery("SELECT id FROM users"+uid);
-        /*if (!users.next()) {
-            print("Please, add users");
-            return;
+        return sql;
+}
+    public static void connectUsers() throws SQLException {
+        ResultSet rsm = statement.executeQuery("SELECT * FROM managers"+uid+" ORDER BY id DESC LIMIT 1");
+        ResultSet rsu = statement2.executeQuery("SELECT * FROM users"+uid+" ORDER BY id DESC LIMIT 1");
+       if (rsm.next() && rsu.next()) statement3.executeUpdate("insert into client"+uid+" (user_id, manager_id) values "+"('"+rsu.getInt(1)+"', '"+rsm.getInt(1)+"');");
+    } //тут я добавляю в таблицу client нового пользователя последнему менеджеру
+    public static Map<User, Manager> getMapConnection() throws SQLException {
+        Map<User, Manager> usmaids = new HashMap<User, Manager>();
+        ResultSet rs = statement.executeQuery("SELECT * FROM client"+uid);
+        while (rs.next()) {
+            ResultSet rsu = statement2.executeQuery("SELECT * FROM users"+uid+" where id = "+rs.getString(2));
+            User user1 = new User();
+            while (rsu.next()) {
+                user1.setId(rsu.getString(1));
+                user1.setName(rsu.getString(2));
+                user1.setLastName(rsu.getString(3));
+                user1.setAge(Integer.parseInt(rsu.getString(4)));
+            }
+            ResultSet rsm = statement3.executeQuery("SELECT * FROM managers"+uid+" where id = "+rs.getString(3));
+            Manager manager1 = new Manager();
+            while (rsm.next()) {
+                manager1.setId(rsm.getString(1));
+                manager1.setName(rsm.getString(2));
+                manager1.setDept(rsm.getInt(4));
+            }
         }
-        if (!managers.next()) {
-            print("Please, add managers");
-            return;
-        }*/
-        while (users.next() && managers.next()) {
-            ids.put(users.getInt(1), managers.getInt(1));
-        }
-       for(Map.Entry<Integer, Integer> res : ids.entrySet()) {
-statement.executeUpdate("insert into client"+uid+" (user_id, manager_id) values " + "('"+res.getKey()+"', '"+res.getValue()+"');");
-        }
-       print("Contacted!");
+        return usmaids;
     }
+
 
     private static void print(Object s) {
         System.out.println(s);
@@ -120,16 +148,32 @@ statement.executeUpdate("insert into client"+uid+" (user_id, manager_id) values 
         String sql = "select * from users"+uid;
         return sql;
     }
-    private static List<User> getAllUsersEntities() throws Exception{
+    private static Map<Integer, Manager> getAllManagersEntities() throws Exception {
+        String sql = getAllManagers();
+        ResultSet rs = statement.executeQuery(sql);
+        Map<Integer, Manager> list = new HashMap<>();
+        int i = 1;
+        while (rs.next()) {
+            Manager manager1 = new Manager();
+            manager1.setId(rs.getString(1));
+            manager1.setName(rs.getString(2));
+            manager1.setDept(rs.getInt(4));
+            list.put(i++, manager1);
+        }
+        return list;
+    }
+    private static Map<Integer, User> getAllUsersEntities() throws Exception{
         String sql = getAllUsers();
         ResultSet rs = statement.executeQuery(sql);
-        List<User> list = new ArrayList();
+        Map<Integer, User> list = new HashMap<>();
+        int i = 1;
         while (rs.next()){
             User user1 = new User();
+            user1.setId(rs.getString(1));
             user1.setName(rs.getString(2));
             user1.setLastName(rs.getString(3));
             user1.setAge(Integer.parseInt(rs.getString(4)));
-            list.add(user1);
+            list.put(i++, user1);
         }
         return list;
     }
