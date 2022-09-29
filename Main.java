@@ -7,7 +7,7 @@ public class Main {
     private static final String password = "123123";
     private static Connection con;
     private static Statement statement, statement2, statement3;
-    private static int uid = 5;
+    private static int uid = 6;
     public static void main(String[] args) throws Exception {
 
         con = DriverManager.getConnection(url, user, password);
@@ -81,24 +81,23 @@ public class Main {
                     break;
                 case 5:
                     Map<User, Manager> usman = getMapConnection();
-                    setAmount(usman);
+                    print(getAmount(usman));
                     break;
             }
             command = scanner.nextInt();
         }
     }
 
-    private static void setAmount(Map<User, Manager> map) throws SQLException, InterruptedException {
+    private static int getAmount(Map<User, Manager> map) throws SQLException, InterruptedException {
+        long mId = 0;
         for (Map.Entry<User, Manager> en : map.entrySet()) {
             User user1 = en.getKey();
+           if (en.getValue().getId() > mId) mId = en.getValue().getId();
         }
-        Integer amount = 0;
-        ResultSet res = statement.executeQuery("SELECT * FROM client"+uid);
-        while(res.next()) {
-            amount++;
-        }
-
-        print(amount);
+        int amount = 0;
+        ResultSet res = statement.executeQuery("SELECT amount FROM managers"+uid+" where id = "+mId);
+        if (res.next()) amount = res.getInt(1);
+        return amount;
     }
 public static String connectUsers(int u, int m, Map<Integer, User> map1, Map<Integer, Manager> map2) {
         User user1 = map1.get(u);
@@ -110,8 +109,13 @@ public static String connectUsers(int u, int m, Map<Integer, User> map1, Map<Int
     public static void connectUsers() throws SQLException {
         ResultSet rsm = statement.executeQuery("SELECT * FROM managers"+uid+" ORDER BY id DESC LIMIT 1");
         ResultSet rsu = statement2.executeQuery("SELECT * FROM users"+uid+" ORDER BY id DESC LIMIT 1");
+        //тут я добавляю в таблицу client нового пользователя последнему менеджеру
        if (rsm.next() && rsu.next()) statement3.executeUpdate("insert into client"+uid+" (user_id, manager_id) values "+"('"+rsu.getInt(1)+"', '"+rsm.getInt(1)+"');");
-    } //тут я добавляю в таблицу client нового пользователя последнему менеджеру
+       //тут добавляю его сумму текущему менеджеру
+        int amount = rsm.getInt(3);
+        amount += rsu.getInt(5);
+        statement.executeUpdate("update managers"+uid+" set amount = "+amount+" ORDER BY id DESC LIMIT 1");
+    }
     public static Map<User, Manager> getMapConnection() throws SQLException {
         Map<User, Manager> usmaids = new HashMap<User, Manager>();
         ResultSet rs = statement.executeQuery("SELECT * FROM client"+uid);
@@ -131,6 +135,7 @@ public static String connectUsers(int u, int m, Map<Integer, User> map1, Map<Int
                 manager1.setName(rsm.getString(2));
                 manager1.setDept(rsm.getInt(4));
             }
+            usmaids.put(user1, manager1);
         }
         return usmaids;
     }
