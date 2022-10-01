@@ -9,7 +9,8 @@ public class Homeworks {
 public static void main(String[] args) throws Exception {
         
 }
-  public static void top3Chars() throws Exception {
+        
+  public static void top3(String reg) throws Exception {
    File file = new File("inp.txt");
         StringBuilder str = new StringBuilder();
         HashMap<String, Integer> map = new HashMap<>();
@@ -17,7 +18,7 @@ public static void main(String[] args) throws Exception {
             while (scanner.hasNext()) {
                 str.append(scanner.nextLine());
             }
-            String[] arr = str.toString().split("");
+            String[] arr = str.toString().split(reg);
             int[] carr = new int[arr.length];
             for (int i = 0; i < arr.length; i++) {
                 for (String s : arr) {
