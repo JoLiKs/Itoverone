@@ -45,6 +45,32 @@ public static void main(String[] args) throws Exception {
             for (String t : tops) print(t);
         }
   }
+public static void timer() {
+int s = 10; 
+ int m = 0; 
+ int h = 0; 
+ for(int i = 0;i<1000000;i++) { 
+ s--; 
+ if (s == 0) { 
+ if (m>0) { 
+ m--; 
+ s = 60; 
+ } 
+ } 
+ if (m == 0) { 
+ if (h>0) { 
+ h--; 
+ m = 60; 
+ } 
+ } 
+ print(h+":"+m+":"+s); 
+ Thread.sleep(1000); 
+ if (h == 0 && m == 0 && h == 0) { 
+ print("Time!!!"); 
+ return; 
+ } 
+ }
+}
     private static void print(Object s) {
         System.out.println(s);
     } 
